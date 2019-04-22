@@ -9,6 +9,9 @@ import argparse
 import imutils
 import time
 import cv2
+import collections
+import os
+from gtts import gTTS
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -41,12 +44,12 @@ fps = FPS().start()
 
 counter = 0
 objects = []
-objects_location = []
 alert_time = 70
 right_obj = []
 left_obj = []
 right_class = []
 left_class = []
+right_keys = []
 
 # loop over the frames from the video stream
 while True:
@@ -95,7 +98,6 @@ while True:
 			# print("X coordinates: (%d, %d)" % (startX, endX))
 			# print("Y coordinates: (%d, %d)" % (startY, endY))
 			if counter == alert_time:
-				print("X coordinates: (%d, %d)" % (startX, endX))
 				objects.append(idx)
 				frame_location = (endX - startX)
 				if startX < 200 and endX < 250:
@@ -113,19 +115,60 @@ while True:
 	# increment counter and do stuff if it is time
 	
 	if counter == alert_time:
-		print("Stuff:", objects)
+		# print("Stuff:", objects)
 		if len(right_obj) > 0:
 			for i in right_obj:
-				right_class.append(CLASSES[right_obj[i]])
-		print("Right stuff:", right_class)
-		print("Left stuff:", left_obj)
+				right_class.append(CLASSES[i])
+
+			right_dict = collections.Counter(right_class)
+			right_keys = list(right_dict.keys())
+
+			right_string = "There are: "
+			for i in right_keys:
+				right_string = right_string + str(right_dict[i]) + ' ' + i + ', '
+			right_string = right_string + "on the right"
+
+			right_tts = gTTS(text=right_string, lang='en', slow=False)
+			right_tts.save("right.mp3")
+			# print(right_string)
+
+		if len(left_obj) > 0:
+			for i in left_obj:
+				left_class.append(CLASSES[i])
+			
+			left_dict = collections.Counter(left_class)
+			left_keys = list(left_dict.keys())
+
+			left_string = "There are: "
+			for i in left_keys:
+				left_string = left_string + str(left_dict[i]) + ' ' + i + ', '
+			left_string = left_string + "on the left"
+
+			left_tts = gTTS(text=left_string, lang='en', slow=False)
+			left_tts.save("left.mp3")
+			# print(left_string)
+
+		try:
+			os.system("mpg321 right.mp3")
+			time.sleep(5)
+		except IOError:
+			print("No right objects file")
+		
+		try:
+			os.system("mpg321 left.mp3")
+			time.sleep(5)
+		except IOError:
+			print("No left objects file")
+
 		# clear lists after processing
 		objects.clear()
 		right_obj.clear()
 		left_obj.clear()
 		right_class.clear()
 		left_class.clear()
+		right_keys.clear()
 		counter = 0
+	
 	counter += 1
 	# if the `q` key was pressed, break from the loop
 	if key == ord("q"):
