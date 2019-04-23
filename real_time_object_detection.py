@@ -1,5 +1,5 @@
 # USAGE
-# python3 real_time_object_detection.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+# python3 detection.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 
 # import the necessary packages
 from imutils.video import VideoStream
@@ -11,6 +11,7 @@ import time
 import cv2
 import collections
 import os
+import vlc
 from gtts import gTTS
 
 # construct the argument parse and parse the arguments
@@ -38,7 +39,7 @@ net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 # initialize the video stream, allow the cammera sensor to warmup,
 # and initialize the FPS counter
 print("[INFO] starting video stream...")
-vs = VideoStream(src=0).start()
+vs = VideoStream(src=1).start()
 time.sleep(2.0)
 fps = FPS().start()
 
@@ -131,6 +132,23 @@ while True:
 			right_tts = gTTS(text=right_string, lang='en', slow=False)
 			right_tts.save("right.mp3")
 			# print(right_string)
+			try:
+				vlc_instance = vlc.Instance()
+				player = vlc_instance.media_player_new()
+				media = vlc_instance.media_new("./right.mp3")
+				player.set_media(media)
+				player.play()
+				time.sleep(.1)
+				duration = player.get_length() / 1000
+				time.sleep(duration)
+				#p = vlc.MediaPlayer("./right.mp3")
+				#length = p.get_length()
+				#p.play()
+				#time.sleep(length)
+				print("right:", duration)
+			except IOError:
+				print("No right objects file")
+			
 
 		if len(left_obj) > 0:
 			for i in left_obj:
@@ -147,18 +165,24 @@ while True:
 			left_tts = gTTS(text=left_string, lang='en', slow=False)
 			left_tts.save("left.mp3")
 			# print(left_string)
-
-		try:
-			os.system("mpg321 right.mp3")
-			time.sleep(5)
-		except IOError:
-			print("No right objects file")
+			try:
+				vlc_instance = vlc.Instance()
+				player = vlc_instance.media_player_new()
+				media = vlc_instance.media_new("./left.mp3")
+				player.set_media(media)
+				player.play()
+				time.sleep(.1)
+				duration = player.get_length() / 1000
+				time.sleep(duration)
+				#p = vlc.MediaPlayer("./left.mp3")
+				#length = p.get_length()
+				#p.play()
+				#time.sleep(length)
+				print("left:", duration)
+			except IOError:
+				print("No left objects file")
 		
-		try:
-			os.system("mpg321 left.mp3")
-			time.sleep(5)
-		except IOError:
-			print("No left objects file")
+		
 
 		# clear lists after processing
 		objects.clear()
